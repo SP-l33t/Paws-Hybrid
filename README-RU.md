@@ -1,4 +1,4 @@
-[![Static Badge](https://img.shields.io/badge/Telegram-Channel-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/+jJhUfsfFCn4zZDk0)      [![Static Badge](https://img.shields.io/badge/Telegram-Bot%20Link-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/fabrika/app?startapp=ref_2222195)
+[![Static Badge](https://img.shields.io/badge/Telegram-Channel-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/+jJhUfsfFCn4zZDk0)      [![Static Badge](https://img.shields.io/badge/Telegram-Bot%20Link-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/PAWSOG_bot/PAWS?startapp=uLnYLVgv)
 
 
 
@@ -14,11 +14,7 @@
 |            Многопоточность             |       ✅        | 
 |        Привязка прокси к сессии        |       ✅        | 
 | Использование вашей реферальной ссылки |       ✅        |
-|               Авто фарм                |       ✅        |
 |        Авто выполнение заданий         |       ✅        |
-|             Авто улучшения             |       ✅        |
-|         Авто вращение рулетки          |       ✅        |
-|    Автоматичесие ежедневная стрики     |       ✅        |
 | Поддержка telethon И pyrogram .session |       ✅        |
 
 _Скрипт осуществляет поиск файлов сессий в следующих папках:_
@@ -30,7 +26,7 @@ _Скрипт осуществляет поиск файлов сессий в �
     SUBSCRIPTIONS_PER_CYCLE: int = 1
 
 
-## [Настройки](https://github.com/SP-l33t/Fabrika-Telethon/tree/main/.env-example)
+## [Настройки](https://github.com/SP-l33t/Paws-Hybrid/tree/main/.env-example)
 |          Настройки          |                                                                                                                              Описание                                                                                                                               |
 |:---------------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
 |    **API_ID / API_HASH**    |                                                                                         Данные платформы, с которой будет запущена сессия Telegram (по умолчанию - android)                                                                                         |
@@ -62,10 +58,10 @@ _Скрипт осуществляет поиск файлов сессий в �
 3. Запишите `API_ID` и `API_HASH` в файле `.env`, предоставленные после регистрации вашего приложения.
 
 ## Установка
-Вы можете скачать [**Репозиторий**](https://github.com/SP-l33t/Fabrika-Telethon) клонированием на вашу систему и установкой необходимых зависимостей:
+Вы можете скачать [**Репозиторий**](https://github.com/SP-l33t/Paws-Hybrid) клонированием на вашу систему и установкой необходимых зависимостей:
 ```shell
-git clone https://github.com/SP-l33t/Fabrika-Telethon.git
-cd Fabrika-Telethon
+git clone https://github.com/SP-l33t/Paws-Hybrid.git
+cd Paws-Hybrid
 ```
 
 Затем для автоматической установки введите:
@@ -92,9 +88,9 @@ python3 main.py
 
 Также для быстрого запуска вы можете использовать аргументы, например:
 ```shell
-~/Fabrika-Telethon >>> python3 main.py --action (1/2)
+~/Paws-Hybrid >>> python3 main.py --action (1/2)
 # Or
-~/Fabrika-Telethon >>> python3 main.py -a (1/2)
+~/Paws-Hybrid >>> python3 main.py -a (1/2)
 
 # 1 - Запускает кликер
 # 2 - Создает сессию
@@ -113,9 +109,9 @@ python main.py
 
 Также для быстрого запуска вы можете использовать аргументы, например:
 ```shell
-~/Fabrika-Telethon >>> python main.py --action (1/2)
+~/Paws-Hybrid >>> python main.py --action (1/2)
 # Или
-~/Fabrika-Telethon >>> python main.py -a (1/2)
+~/Paws-Hybrid >>> python main.py -a (1/2)
 
 # 1 - Запускает кликер
 # 2 - Создает сессию

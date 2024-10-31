@@ -1,4 +1,4 @@
-[![Static Badge](https://img.shields.io/badge/Telegram-Channel-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/+jJhUfsfFCn4zZDk0)      [![Static Badge](https://img.shields.io/badge/Telegram-Bot%20Link-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/fabrika/app?startapp=ref_2222195)
+[![Static Badge](https://img.shields.io/badge/Telegram-Channel-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/+jJhUfsfFCn4zZDk0)      [![Static Badge](https://img.shields.io/badge/Telegram-Bot%20Link-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/PAWSOG_bot/PAWS?startapp=uLnYLVgv)
 
 
 
@@ -13,11 +13,6 @@
 |:--------------------------------------------------------------------------:|:---------:|
 |                               Multithreading                               |     ✅     |
 |                          Proxy binding to session                          |     ✅     |
-|                            Using your referral                             |     ✅     |
-|                                  Auto Tap                                  |     ✅     |
-|                                 Auto boost                                 |     ✅     |
-| Auto manage factory (buy worker, send worker to work, claim worker reward) |     ✅     |
-|                            Auto buy workplaces                             |     ✅     |
 |                                 Auto tasks                                 |     ✅     |
 |                              Auto join squad                               |     ✅     |
 |                  Supports telethon AND pyrogram .session                   |     ✅     |
@@ -28,7 +23,7 @@ _Script searches for session files in the following folders:_
 * /session/telethon
 
 
-## [Settings](https://github.com/SP-l33t/Fabrika-Telethon/tree/main/.env-example)
+## [Settings](https://github.com/SP-l33t/Paws-Hybrid/tree/main/.env-example)
 
 # Use default setting for best performance !
 |          Settings           |                                                                                                                  Description                                                                                                                  |
@@ -63,10 +58,10 @@ Before you begin, make sure you have the following installed:
 3. Record the **API_ID** and **API_HASH** provided after registering your application in the `.env` file.
 
 ## Installation
-You can download [**Repository**](https://github.com/SP-l33t/Fabrika-Telethon) by cloning it onto your system and installing the necessary dependencies:
+You can download [**Repository**](https://github.com/SP-l33t/Paws-Hybrid) by cloning it onto your system and installing the necessary dependencies:
 ```shell
-git clone https://github.com/SP-l33t/Fabrika-Telethon.git
-cd Fabrika-Telethon
+git clone https://github.com/SP-l33t/Paws-Hybrid.git
+cd Paws-Hybrid
 ```
 
 # Linux manual installation
@@ -81,9 +76,9 @@ python3 main.py
 
 You can also use arguments for quick start, for example:
 ```shell
-~/Fabrika-Telethon >>> python3 main.py --action (1/2)
+~/Paws-Hybrid >>> python3 main.py --action (1/2)
 # Or
-~/Fabrika-Telethon >>> python3 main.py -a (1/2)
+~/Paws-Hybrid >>> python3 main.py -a (1/2)
 
 # 1 - Run clicker
 # 2 - Creates a session
@@ -101,9 +96,9 @@ python main.py
 
 You can also use arguments for quick start, for example:
 ```shell
-~/Fabrika-Telethon >>> python main.py --action (1/2)
+~/Paws-Hybrid >>> python main.py --action (1/2)
 # Or
-~/Fabrika-Telethon >>> python main.py -a (1/2)
+~/Paws-Hybrid >>> python main.py -a (1/2)
 
 # 1 - Run clicker
 # 2 - Creates a session
