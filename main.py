@@ -25,6 +25,6 @@ async def main():
 
 
 if __name__ == '__main__':
-    system('title Fabrika')
+    system('title Paws')
     with suppress(KeyboardInterrupt):
         asyncio.run(main())
