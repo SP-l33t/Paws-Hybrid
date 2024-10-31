@@ -56,15 +56,14 @@ async def check_base_url():
                         return True
                 else:
                     logger.error(f"Main JS updated. New file name: <lr>'{js}'</lr>. Hash: '<lr>{await get_js_hash(js)}</lr>'")
-                    return False
+                    sys.exit("Bot updates detected. Contact me to check if it's safe to continue: https://t.me/SP_l33t")
         else:
             logger.error("<lr>No main js file found. Can't continue</lr>")
-            return False
+            sys.exit("No main js file found. Contact me to check if it's safe to continue: https://t.me/SP_l33t")
 
 
 async def check_bot_update_loop(start_delay: 0):
     await asyncio.sleep(start_delay)
     while settings.TRACK_BOT_UPDATES:
-        if not(await check_base_url()):
-            sys.exit("Bot updates detected. Contact me to check if it's safe to continue: https://t.me/SP_l33t")
+        await check_base_url()
         await asyncio.sleep(uniform(1500, 2000))
