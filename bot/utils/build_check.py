@@ -2,7 +2,9 @@ import asyncio
 import re
 import aiohttp
 import sys
+import ssl
 import json
+from aiocfscrape import CloudflareScraper
 from random import uniform
 from bot.utils import logger
 from bot.config import settings
@@ -18,15 +20,21 @@ headers = {
 
 
 async def get_main_js_format(base_url):
-    async with aiohttp.request(url=base_url, method="GET", headers=headers) as response:
-        response.raise_for_status()
-        try:
-            content = (await response.text()).replace("/script>", "/script>\n")
-            matches = re.findall(r'src="(/.+?main.*?\.js)', content)
-            return sorted(set(matches), key=len, reverse=True) if matches else None
-        except Exception as e:
-            logger.warning(f"Error fetching the base URL: {e}")
-            return None
+    ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+    ssl_context.minimum_version = ssl.TLSVersion.TLSv1_3
+    async with CloudflareScraper(headers=headers, connector=aiohttp.TCPConnector(ssl=ssl_context)) as client:
+        async with client.request(url=base_url, method="GET", headers=headers) as response:
+            try:
+                response.raise_for_status()
+                content = (await response.text()).replace("/script>", "/script>\n")
+                matches = re.findall(r'src="(/.+?main.*?\.js)', content)
+                return sorted(set(matches), key=len, reverse=True) if matches else None
+            except Exception as e:
+                if response.status == 403:
+                    logger.warning(f"Cloudflare 403: {e}")
+                else:
+                    logger.warning(f"Error fetching the base URL: {e}")
+                return None
 
 
 async def get_versions(service):

@@ -1,6 +1,7 @@
 import aiohttp
 import asyncio
 import re
+import ssl
 from urllib.parse import unquote, parse_qs
 from aiocfscrape import CloudflareScraper
 from aiohttp_proxy import ProxyConnector
@@ -134,9 +135,12 @@ class Tapper:
         access_token_created_time = 0
         sleep_time = 0
 
-        proxy_conn = {'connector': ProxyConnector.from_url(self.proxy)} if self.proxy else {}
+        ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+        ssl_context.minimum_version = ssl.TLSVersion.TLSv1_3
+        proxy_conn = ProxyConnector.from_url(self.proxy, ssl=ssl_context) if self.proxy \
+            else aiohttp.TCPConnector(ssl_context=ssl_context)
         async with CloudflareScraper(headers=self.headers, timeout=aiohttp.ClientTimeout(60),
-                                     **proxy_conn) as http_client:
+                                     connector=proxy_conn) as http_client:
             while True:
                 if not await self.check_proxy(http_client=http_client):
                     logger.warning(self.log_message('Failed to connect to proxy server. Sleep 150 seconds.'))
