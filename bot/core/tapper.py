@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+import json
 import re
 import ssl
 from urllib.parse import unquote, parse_qs
@@ -17,7 +18,24 @@ from bot.exceptions import InvalidSession
 from .headers import headers, get_sec_ch_ua
 
 API_ENDPOINT = "https://api.paws.community/v1"
-IGNORE_QUEST_CODES = ["invite", "wallet"]
+TASKS_WL = {
+    "672a933a7470fdfea331be92": "One falls, one rises",
+    "6729082b93d9038819af5e77": " Put 🐾 in your name",
+    "6730dc5674fd6bd0dd6904dd": "Join Tomarket Channel",
+    "6730dc6e74fd6bd0dd6904df": "Join X Empire Channel",
+    "6730dc3374fd6bd0dd6904db": "Join Cats Channel",
+    "6727ca4c1ee144b53eb8c08a": "Join Blum Channel",
+    "6714e8b80f93ce482efae727": "Follow channel",
+    "671b8ee422d15820f13dc61d": "Connect wallet",
+    "671b8ecb22d15820f13dc61a": "Invite 10 friends"
+}
+TASKS_BL = {
+    "6730b42d74fd6bd0dd6904c1": "Go vote",
+    "6730b44974fd6bd0dd6904c3": "Vote for a winner",
+    "6730b45874fd6bd0dd6904c5": "Vote for a loser",
+    "6730b47b74fd6bd0dd6904c7": "Mystery Quest",
+    "6727ca831ee144b53eb8c08c": "Boost PAWS channel"
+}
 
 
 def sanitize_string(input_str: str):
@@ -47,6 +65,9 @@ class Tapper:
 
         self.ref_id = None
         self.access_token = None
+        self.user_data = None
+        self.ref_count = 0
+        self.wallet = session_config.get('ton_address')
 
     def log_message(self, message) -> str:
         return f"<ly>{self.session_name}</ly> | {message}"
@@ -56,6 +77,7 @@ class Tapper:
 
         tg_web_data = unquote(string=webview_url.split('tgWebAppData=')[1].split('&tgWebAppVersion')[0])
         query_params = parse_qs(tg_web_data)
+        self.user_data = json.loads(query_params.get('user', [''])[0])
         self.ref_id = query_params.get('start_param', [''])[0]
 
         return tg_web_data
@@ -89,6 +111,7 @@ class Tapper:
                 http_client.headers['authorization'] = f"Bearer {self.access_token}"
                 if None in res_data:
                     balance = res_data[1].get('gameData', {}).get('balance')
+                    self.ref_count = res_data[1].get('referralData', {}).get('referralsCount', 0)
                     logger.success(self.log_message(f"Logged in Successfully | Balance {balance}"))
                 else:
                     balance = res_data[2].get('total')
@@ -126,6 +149,19 @@ class Tapper:
         else:
             logger.warning(self.log_message(f"Failed to claim quest: {response.status}"))
             return None
+
+    async def connect_wallet(self, http_client: CloudflareScraper):
+        if not self.wallet:
+            return
+        wallet = {"wallet": self.wallet}
+        resp = await http_client.post(f"{API_ENDPOINT}/user/wallet", json=wallet)
+        if resp.status in range(200, 300):
+            resp_json = await resp.json()
+            return resp_json.get('success')
+
+    async def add_emoji_to_first_name(self):
+        if '🐾' not in self.user_data.get('first_name'):
+            await self.tg_client.update_profile(first_name=f"{self.user_data.get('first_name')} 🐾")
 
     async def run(self) -> None:
         random_delay = uniform(1, settings.SESSION_START_DELAY)
@@ -173,14 +209,27 @@ class Tapper:
                         channel_subs = 0
                         shuffle(tasks)
                         for task in tasks:
-                            if not task.get('type') or task.get('code') in IGNORE_QUEST_CODES \
-                                    or task.get('progress', {}).get('claimed'):
+                            if task.get('progress', {}).get('claimed'):
+                                continue
+                            if task.get('_id') not in TASKS_WL and task.get('_id') not in TASKS_BL:
+                                logger.info(self.log_message(
+                                    f"Quest with id: <lc>{task.get('_id')}</lc> and Title: <lc>{task.get('title')}</lc>"
+                                    f" is not present in the white and black lists"))
+                                continue
+                            elif task.get('_id') in TASKS_BL:
                                 continue
 
                             task_id = task.get('_id')
-                            if task.get('code') == 'telegram' and channel_subs < settings.SUBSCRIPTIONS_PER_CYCLE:
-                                # TODO Doesn't work ATM
-                                # await self.tg_client.join_and_mute_tg_channel(task.get('data'))
+                            if task.get('code') == "wallet":
+                                await self.connect_wallet(http_client)
+                            elif task.get('code') == "invite":
+                                progress = task.get('progress', {})
+                                if progress.get('current', 0) < progress.get('total', 100):
+                                    continue
+                            elif task.get('code') == "emojiName":
+                                await self.add_emoji_to_first_name()
+                            elif task.get('code') == 'telegram' and channel_subs < settings.SUBSCRIPTIONS_PER_CYCLE:
+                                await self.tg_client.join_and_mute_tg_channel(task.get('data'))
                                 channel_subs += 1
                                 continue
                             status = await self.complete_quest(http_client, task_id)

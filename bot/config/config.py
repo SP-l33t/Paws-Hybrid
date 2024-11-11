@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     REF_ID: str = "uLnYLVgv"
 
     PERFORM_TASKS: bool = True
+    PERFORM_WALLET_TASK: bool = False
+    PERFORM_EMOJI_TASK: bool = False
     SUBSCRIPTIONS_PER_CYCLE: int = 1
 
     SESSION_START_DELAY: int = 360

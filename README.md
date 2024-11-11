@@ -34,6 +34,8 @@ _Script searches for session files in the following folders:_
 |    **TRACK_BOT_UPDATES**    |                                                                             Tracks bot updates and stops bot from running, if bot is updated (default: **True**)                                                                              |
 |         **REF_ID**          |                                                                                         Your referral id (part of the referral link after startapp=)                                                                                          |
 |      **PERFORM_TASKS**      |                                                                                                       Auto do tasks ( **True** / False)                                                                                                       |
+|   **PERFORM_WALLET_TASK**   |                                                                                                 Perform Link wallet task ( True / **False** )                                                                                                 |
+|   **PERFORM_EMOJI_TASK**    |                                                                                              Perform add Emoji to name task ( True / **False** )                                                                                              |
 | **SUBSCRIPTIONS_PER_CYCLE** |                                                                Amount of tasks with channel subscriptions to be performed per round. 0 = Subscriptions are disabled ( **1** )                                                                 |
 |   **SESSION_START_DELAY**   |                                                                                        Random delay at session start from 1 to set value (e.g. **30**)                                                                                        |
 |       **SLEEP_TIME**        |                                                                                               Sleep time between cycles ( **[43200, 86400]** )                                                                                                |
@@ -42,7 +44,6 @@ _Script searches for session files in the following folders:_
 |  **DISABLE_PROXY_REPLACE**  |                                                                      Disable automatic checking and replacement of non-working proxies before startup (True / **False**)                                                                      |
 |      **DEVICE_PARAMS**      |                                                                          Enter device settings to make the telegram session look more realistic  (True / **False**)                                                                           |
 |      **DEBUG_LOGGING**      |                                                                                     Whether to log error's tracebacks to /logs folder (True / **False**)                                                                                      |
-
 
 ## Quick Start 📚
 
