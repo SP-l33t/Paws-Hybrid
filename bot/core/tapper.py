@@ -135,7 +135,7 @@ class Tapper:
         response = await http_client.post(f"{API_ENDPOINT}/quests/completed", json=payload)
         if response.status in range(200, 300):
             resp_json = await response.json()
-            return resp_json.get('success') and resp_json.get('data')
+            return resp_json.get('success')
         else:
             logger.warning(self.log_message(f"Failed to complete quest: {response.status}"))
             return None
@@ -204,6 +204,10 @@ class Tapper:
                     if self.tg_client.is_fist_run:
                         await first_run.append_recurring_session(self.session_name)
                     await asyncio.sleep(uniform(3, 10))
+
+                    if settings.PERFORM_EMOJI_TASK:
+                        await self.add_emoji_to_first_name()
+
                     if settings.PERFORM_TASKS:
                         tasks = await self.get_quests(http_client)
                         channel_subs = 0
@@ -226,12 +230,13 @@ class Tapper:
                                 progress = task.get('progress', {})
                                 if progress.get('current', 0) < progress.get('total', 100):
                                     continue
-                            elif task.get('code') == "emojiName":
-                                await self.add_emoji_to_first_name()
-                            elif task.get('code') == 'telegram' and channel_subs < settings.SUBSCRIPTIONS_PER_CYCLE:
-                                await self.tg_client.join_and_mute_tg_channel(task.get('data'))
-                                channel_subs += 1
+                            elif task.get('code') == "emojiName" and not settings.PERFORM_EMOJI_TASK:
                                 continue
+                            elif task.get('code') == 'telegram' and channel_subs < settings.SUBSCRIPTIONS_PER_CYCLE:
+                                if task.get('progress', {}).get('status') != 'claimable':
+                                    await self.tg_client.join_and_mute_tg_channel(task.get('data'))
+                                    channel_subs += 1
+                                    await asyncio.sleep(10)
                             status = await self.complete_quest(http_client, task_id)
                             if status:
                                 await asyncio.sleep(uniform(2, 5))
