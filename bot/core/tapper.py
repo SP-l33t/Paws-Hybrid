@@ -27,7 +27,8 @@ TASKS_WL = {
     "6727ca4c1ee144b53eb8c08a": "Join Blum Channel",
     "6714e8b80f93ce482efae727": "Follow channel",
     "671b8ee422d15820f13dc61d": "Connect wallet",
-    "671b8ecb22d15820f13dc61a": "Invite 10 friends"
+    "671b8ecb22d15820f13dc61a": "Invite 10 friends",
+    "6734ef65594f8f54c07887f9": "Check PAWS TG sub"
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -224,7 +225,9 @@ class Tapper:
                                 continue
 
                             task_id = task.get('_id')
-                            if task.get('code') == "wallet":
+                            if task.get("checkRequirements", True) is False and task.get('code') != "emojiName":
+                                pass
+                            elif task.get('code') == "wallet":
                                 await self.connect_wallet(http_client)
                             elif task.get('code') == "invite":
                                 progress = task.get('progress', {})
