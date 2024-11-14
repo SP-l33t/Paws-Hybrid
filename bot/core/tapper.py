@@ -29,7 +29,8 @@ TASKS_WL = {
     "671b8ee422d15820f13dc61d": "Connect wallet",
     "671b8ecb22d15820f13dc61a": "Invite 10 friends",
     "6734ef65594f8f54c07887f9": "Check PAWS TG sub",
-    "67362326ce14073e9a9e0144": "Join PAWS Cult X"
+    "67362326ce14073e9a9e0144": "Join PAWS Cult X",
+    "673653c2ce14073e9a9e0153": "Share your PAWS (+image)"
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
