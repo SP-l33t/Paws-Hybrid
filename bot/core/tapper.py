@@ -33,7 +33,8 @@ TASKS_WL = {
     "673653c2ce14073e9a9e0153": "Share your PAWS (+image)",
     "6740b35b15bd1d26b7b7126b": "Check PAWS X",
     "6740b33415bd1d26b7b71269": "Check PAWS TG",
-    "673a23760f9acd0470329409": "Study PAWS"
+    "673a23760f9acd0470329409": "Study PAWS",
+    "674b1f0c30dc53f7e9aec46a": "Mystery Quest: Scroll"
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
