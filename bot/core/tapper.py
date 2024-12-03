@@ -35,7 +35,8 @@ TASKS_WL = {
     "6740b33415bd1d26b7b71269": "Check PAWS TG",
     "673a23760f9acd0470329409": "Study PAWS",
     "674b1f0c30dc53f7e9aec46a": "Mystery Quest: Scroll",
-    "674dcb4b30dc53f7e9aec470": "Mystery Quest: Tabs"
+    "674dcb4b30dc53f7e9aec470": "Mystery Quest: Tabs",
+    "674f45e99bfbbe63fab834f2": "Get Lucky"
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -153,7 +154,8 @@ class Tapper:
         response = await http_client.post(f"{API_ENDPOINT}/quests/claim", json=payload)
         if response.status in range(200, 300):
             resp_json = await response.json()
-            return resp_json.get('success') and resp_json.get('data')
+            data = resp_json.get('data')
+            return data if resp_json.get('success', False) and data else False
         else:
             logger.warning(self.log_message(f"Failed to claim quest: {response.status}"))
             return None
@@ -251,10 +253,11 @@ class Tapper:
                             if status:
                                 await asyncio.sleep(uniform(2, 5))
                                 status = await self.claim_quest_reward(http_client, task_id)
+                                reward = status.get('amount', 0) or task.get('rewards', [{}])[0].get('amount')
                                 if status:
                                     logger.success(self.log_message(
                                         f"Successfully completed task <lg>{task.get('title')}</lg> and got "
-                                        f"<lg>{task.get('rewards', [{}])[0].get('amount')}</lg> Paws"))
+                                        f"<lg>{reward}</lg> Paws"))
 
                             await asyncio.sleep(uniform(2, 5))
 
