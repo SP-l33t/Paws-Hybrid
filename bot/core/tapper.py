@@ -158,7 +158,7 @@ class Tapper:
             return data if resp_json.get('success', False) and data else False
         else:
             logger.warning(self.log_message(f"Failed to claim quest: {response.status}"))
-            return None
+            return False
 
     async def connect_wallet(self, http_client: CloudflareScraper):
         if not self.wallet:
@@ -253,7 +253,8 @@ class Tapper:
                             if status:
                                 await asyncio.sleep(uniform(2, 5))
                                 status = await self.claim_quest_reward(http_client, task_id)
-                                reward = status.get('amount', 0) or task.get('rewards', [{}])[0].get('amount')
+                                reward = status.get('amount', 0) if isinstance(status, dict) else \
+                                    task.get('rewards', [{}])[0].get('amount')
                                 if status:
                                     logger.success(self.log_message(
                                         f"Successfully completed task <lg>{task.get('title')}</lg> and got "
