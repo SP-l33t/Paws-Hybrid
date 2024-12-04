@@ -36,7 +36,9 @@ TASKS_WL = {
     "673a23760f9acd0470329409": "Study PAWS",
     "674b1f0c30dc53f7e9aec46a": "Mystery Quest: Scroll",
     "674dcb4b30dc53f7e9aec470": "Mystery Quest: Tabs",
-    "674f45e99bfbbe63fab834f2": "Get Lucky"
+    "674f45e99bfbbe63fab834f2": "Get Lucky",
+    "675067faaae81a10ba5a3c4f": "GET PAWSED"
+
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -250,6 +252,8 @@ class Tapper:
                                     channel_subs += 1
                                     await asyncio.sleep(10)
                             status = await self.complete_quest(http_client, task_id)
+                            if task_id == "675067faaae81a10ba5a3c4f" and status:
+                                continue
                             if status:
                                 await asyncio.sleep(uniform(2, 5))
                                 status = await self.claim_quest_reward(http_client, task_id)
