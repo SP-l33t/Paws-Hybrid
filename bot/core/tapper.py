@@ -45,7 +45,8 @@ TASKS_BL = {
     "6730b44974fd6bd0dd6904c3": "Vote for a winner",
     "6730b45874fd6bd0dd6904c5": "Vote for a loser",
     "6730b47b74fd6bd0dd6904c7": "Mystery Quest",
-    "6727ca831ee144b53eb8c08c": "Boost PAWS channel"
+    "6727ca831ee144b53eb8c08c": "Boost PAWS channel",
+    "6740b2cb15bd1d26b7b71266": "Add PAWS emoji"  # Only Premium
 }
 
 
@@ -251,9 +252,8 @@ class Tapper:
                                     await self.tg_client.join_and_mute_tg_channel(task.get('data'))
                                     channel_subs += 1
                                     await asyncio.sleep(10)
-                            status = await self.complete_quest(http_client, task_id)
-                            if task_id == "675067faaae81a10ba5a3c4f" and status:
-                                continue
+
+                            status = await self.complete_quest(http_client, task_id) if task.get('progress', {}).get('status', "") != "claimable" else True
                             if status:
                                 await asyncio.sleep(uniform(2, 5))
                                 status = await self.claim_quest_reward(http_client, task_id)
@@ -266,9 +266,8 @@ class Tapper:
 
                             await asyncio.sleep(uniform(2, 5))
 
-                    sleep_time = uniform(settings.SLEEP_TIME[0], settings.SLEEP_TIME[1])
-                    logger.info(self.log_message(f"Nothing else to do. Gonna sleep for {int(sleep_time)}s..."))
-                    await asyncio.sleep(sleep_time)
+                    logger.info(self.log_message(f"All activities for the current session have been completed"))
+                    return
 
                 except InvalidSession as error:
                     raise error
