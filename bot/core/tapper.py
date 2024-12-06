@@ -39,7 +39,8 @@ TASKS_WL = {
     "674f45e99bfbbe63fab834f2": "Get Lucky",
     "675067faaae81a10ba5a3c4f": "GET PAWSED",
     "6751e24d561ee9de322ef182": "Check PAWS TG",
-    "6751e267561ee9de322ef184": "Check PAWS X"
+    "6751e267561ee9de322ef184": "Check PAWS X",
+    "67532ea5a3770d4f94e38f6f": "REACT HARDER"
 
 }
 TASKS_BL = {
@@ -257,6 +258,11 @@ class Tapper:
 
                             status = await self.complete_quest(http_client, task_id) if \
                                 task.get('progress', {}).get('status', "") != "claimable" else True
+
+                            if task.get('_id') == "67532ea5a3770d4f94e38f6f":
+                                if status:
+                                    logger.info(self.log_message(f"Successfully completed task: <lg>{task.get('title')}</lg>. Claim isn't available yet"))
+                                continue
 
                             if status:
                                 await asyncio.sleep(uniform(2, 5))
