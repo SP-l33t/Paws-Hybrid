@@ -259,10 +259,10 @@ class Tapper:
                             status = await self.complete_quest(http_client, task_id) if \
                                 task.get('progress', {}).get('status', "") != "claimable" else True
 
-                            if task.get('_id') == "67532ea5a3770d4f94e38f6f":
-                                if status:
-                                    logger.info(self.log_message(f"Successfully completed task: <lg>{task.get('title')}</lg>. Claim isn't available yet"))
-                                continue
+                            # if task.get('_id') == "67532ea5a3770d4f94e38f6f":
+                            #     if status:
+                            #         logger.info(self.log_message(f"Successfully completed task: <lg>{task.get('title')}</lg>. Claim isn't available yet"))
+                            #     continue
 
                             if status:
                                 await asyncio.sleep(uniform(2, 5))
