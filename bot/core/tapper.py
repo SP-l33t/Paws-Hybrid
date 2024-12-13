@@ -40,7 +40,13 @@ TASKS_WL = {
     "675067faaae81a10ba5a3c4f": "GET PAWSED",
     "6751e24d561ee9de322ef182": "Check PAWS TG",
     "6751e267561ee9de322ef184": "Check PAWS X",
-    "67532ea5a3770d4f94e38f6f": "REACT HARDER"
+    "67532ea5a3770d4f94e38f6f": "REACT HARDER",
+    "675729bc8a00f11f8cf8c1fd": "Reach 1st Milestone",
+    "67572a2c8a00f11f8cf8c1ff": "Reach 2nd Milestone",
+    "6757a207ec9bc04f1beb0e75": "Reach 3nd Milestone",
+    "6757a21dec9bc04f1beb0e77": "Reach 4nd Milestone",
+    "6757a232ec9bc04f1beb0e79": "Reach 5nd Milestone",
+    "6758d84842df2161c728c742": "Reach 6nd Milestone"
 
 }
 TASKS_BL = {
@@ -49,7 +55,11 @@ TASKS_BL = {
     "6730b45874fd6bd0dd6904c5": "Vote for a loser",
     "6730b47b74fd6bd0dd6904c7": "Mystery Quest",
     "6727ca831ee144b53eb8c08c": "Boost PAWS channel",
-    "6740b2cb15bd1d26b7b71266": "Add PAWS emoji"  # Only Premium
+    "6740b2cb15bd1d26b7b71266": "Add PAWS emoji",  # Only Premium
+    "6754c09b5de2c352526ab323": "Explore TON",
+    "6754c1065de2c352526ab324": "Mystery Quest",
+    "6756c53f0284d9d7b208dd50": "Lucky Block",
+    "675adeb56fe975fdde798265": "Infinite Milestone"
 }
 
 
@@ -199,7 +209,7 @@ class Tapper:
                     await asyncio.sleep(150)
                     continue
 
-                refresh_webview_time = randint(3400, 3600)
+                refresh_webview_time = uniform(3400, 3600)
                 try:
                     if time() - access_token_created_time >= refresh_webview_time:
                         tg_web_data = await self.get_tg_web_data()
@@ -225,9 +235,33 @@ class Tapper:
                         await self.add_emoji_to_first_name()
 
                     if settings.PERFORM_TASKS:
+                        # TODO TEMP
+                        milestone_tasks = [
+                            "675729bc8a00f11f8cf8c1fd",
+                            "67572a2c8a00f11f8cf8c1ff",
+                            "6757a207ec9bc04f1beb0e75",
+                            "6757a21dec9bc04f1beb0e77",
+                            "6757a232ec9bc04f1beb0e79",
+                            "6758d84842df2161c728c742"]
+
+                        def get_sort_key(m_task):
+                            try:
+                                index = milestone_tasks.index(m_task['_id'])
+                                return 0, index
+                            except ValueError:
+                                return 1, m_task['_id']
+                        # __________________________________
+
                         tasks = await self.get_quests(http_client)
                         channel_subs = 0
                         shuffle(tasks)
+                        # TODO TEMP
+                        tasks = sorted(tasks, key=get_sort_key)
+                        # for task in tasks:
+                        #     print(task)
+                        #     print('\n')
+                        # exit(0)
+                        # __________________________________
                         for task in tasks:
                             if task.get('progress', {}).get('claimed'):
                                 continue
