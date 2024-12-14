@@ -46,8 +46,8 @@ TASKS_WL = {
     "6757a207ec9bc04f1beb0e75": "Reach 3nd Milestone",
     "6757a21dec9bc04f1beb0e77": "Reach 4nd Milestone",
     "6757a232ec9bc04f1beb0e79": "Reach 5nd Milestone",
-    "6758d84842df2161c728c742": "Reach 6nd Milestone"
-
+    "6758d84842df2161c728c742": "Reach 6nd Milestone",
+    "675adeb56fe975fdde798265": "Infinite Milestone"
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -58,8 +58,7 @@ TASKS_BL = {
     "6740b2cb15bd1d26b7b71266": "Add PAWS emoji",  # Only Premium
     "6754c09b5de2c352526ab323": "Explore TON",
     "6754c1065de2c352526ab324": "Mystery Quest",
-    "6756c53f0284d9d7b208dd50": "Lucky Block",
-    "675adeb56fe975fdde798265": "Infinite Milestone"
+    "6756c53f0284d9d7b208dd50": "Lucky Block"
 }
 
 
@@ -242,7 +241,8 @@ class Tapper:
                             "6757a207ec9bc04f1beb0e75",
                             "6757a21dec9bc04f1beb0e77",
                             "6757a232ec9bc04f1beb0e79",
-                            "6758d84842df2161c728c742"]
+                            "6758d84842df2161c728c742",
+                            "675adeb56fe975fdde798265"]
 
                         def get_sort_key(m_task):
                             try:
