@@ -7,7 +7,7 @@ from urllib.parse import unquote, parse_qs
 from aiocfscrape import CloudflareScraper
 from aiohttp_proxy import ProxyConnector
 from better_proxy import Proxy
-from random import uniform, randint, shuffle
+from random import uniform, shuffle
 from time import time
 
 from bot.utils.universal_telegram_client import UniversalTelegramClient
@@ -47,7 +47,10 @@ TASKS_WL = {
     "6757a21dec9bc04f1beb0e77": "Reach 4nd Milestone",
     "6757a232ec9bc04f1beb0e79": "Reach 5nd Milestone",
     "6758d84842df2161c728c742": "Reach 6nd Milestone",
-    "675adeb56fe975fdde798265": "Infinite Milestone"
+    "675adeb56fe975fdde798265": "Infinite Milestone",
+    "675dbe20995e9832d3ebb8ee": "heck PAWS TG",
+    "675dbe36995e9832d3ebb8f0": "Check PAWS X",
+    "675c65a74d9b0f56a8bb99f1": "Join Streaks from @tapps"
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -77,7 +80,7 @@ class Tapper:
             logger.critical(self.log_message('CHECK accounts_config.json as it might be corrupted'))
             exit(-1)
 
-        self.headers = headers
+        self.headers = headers.copy()
         user_agent = session_config.get('user_agent')
         self.headers['user-agent'] = user_agent
         self.headers.update(**get_sec_ch_ua(user_agent))
