@@ -50,7 +50,9 @@ TASKS_WL = {
     "675adeb56fe975fdde798265": "Infinite Milestone",
     "675dbe20995e9832d3ebb8ee": "heck PAWS TG",
     "675dbe36995e9832d3ebb8f0": "Check PAWS X",
-    "675c65a74d9b0f56a8bb99f1": "Join Streaks from @tapps"
+    "675c65a74d9b0f56a8bb99f1": "Join Streaks from @tapps",
+    "676467f28eb5e1e35f033d63": "Mystery Quest",
+    "67654a381b49f3cc132b80cb": "Join Y Twitter"
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
