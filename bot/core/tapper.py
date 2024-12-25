@@ -53,7 +53,13 @@ TASKS_WL = {
     "675c65a74d9b0f56a8bb99f1": "Join Streaks from @tapps",
     "676467f28eb5e1e35f033d63": "Mystery Quest",
     "67654a381b49f3cc132b80cb": "Join Y Twitter",
-    "6766eceedf75d42c3fff4cbc": "Wen TGE?"
+    "6766eceedf75d42c3fff4cbc": "Wen TGE?",
+    "6768c21f2e171c1a4d8e3df1": "MY PAWS GONE!!!",
+    "6768c22d2e171c1a4d8e3df3": "PAWS lost, report it!",
+    "6768c30f2e171c1a4d8e3df5": "#PAWSMAS COMING 🐾",
+    "6768c3242e171c1a4d8e3df8": "Lil buddy almost had’em, go help!",
+    "6768c3312e171c1a4d8e3dfa": "Well done, bud!",
+    "6768c3402e171c1a4d8e3dfc": "Christmas Miracle"
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -151,8 +157,8 @@ class Tapper:
         logger.warning(self.log_message(f"Failed to login. {response.status}"))
         return False
 
-    async def get_quests(self, http_client: CloudflareScraper):
-        response = await http_client.get(f"{API_ENDPOINT}/quests/list")
+    async def get_quests(self, http_client: CloudflareScraper, christmas=False):
+        response = await http_client.get(f"{API_ENDPOINT}/quests/list{'?type=christmas' if christmas else ''}")
         if response.status in range(200, 300):
             data = (await response.json()).get('data', {})
             return data
@@ -176,7 +182,8 @@ class Tapper:
         if response.status in range(200, 300):
             resp_json = await response.json()
             data = resp_json.get('data')
-            return data if resp_json.get('success', False) and data else False
+            is_success = resp_json.get('success', False)
+            return (data or resp_json) if is_success else False
         else:
             logger.warning(self.log_message(f"Failed to claim quest: {response.status}"))
             return False
@@ -189,6 +196,11 @@ class Tapper:
         if resp.status in range(200, 300):
             resp_json = await resp.json()
             return resp_json.get('success')
+
+    async def get_grinch(self, http_client: CloudflareScraper):
+        resp = await http_client.post(f"{API_ENDPOINT}/user/grinch", data="")
+        if resp.status in range(200, 300):
+            return (await resp.json()).get('success', False)
 
     async def add_emoji_to_first_name(self):
         if '🐾' not in self.user_data.get('first_name'):
@@ -240,34 +252,16 @@ class Tapper:
                         await self.add_emoji_to_first_name()
 
                     if settings.PERFORM_TASKS:
-                        # TODO TEMP
-                        milestone_tasks = [
-                            "675729bc8a00f11f8cf8c1fd",
-                            "67572a2c8a00f11f8cf8c1ff",
-                            "6757a207ec9bc04f1beb0e75",
-                            "6757a21dec9bc04f1beb0e77",
-                            "6757a232ec9bc04f1beb0e79",
-                            "6758d84842df2161c728c742",
-                            "675adeb56fe975fdde798265"]
-
-                        def get_sort_key(m_task):
-                            try:
-                                index = milestone_tasks.index(m_task['_id'])
-                                return 0, index
-                            except ValueError:
-                                return 1, m_task['_id']
-                        # __________________________________
 
                         tasks = await self.get_quests(http_client)
                         channel_subs = 0
                         shuffle(tasks)
-                        # TODO TEMP
-                        tasks = sorted(tasks, key=get_sort_key)
-                        # for task in tasks:
-                        #     print(task)
-                        #     print('\n')
-                        # exit(0)
-                        # __________________________________
+
+                        christmas_tasks = await self.get_quests(http_client, True)
+                        if len([task for task in christmas_tasks if not task.get('progress', {}).get('claimed', True)]):
+                            tasks += christmas_tasks
+                            await asyncio.sleep(1)
+                            await self.get_grinch(http_client)
                         for task in tasks:
                             if task.get('progress', {}).get('claimed'):
                                 continue
@@ -308,11 +302,11 @@ class Tapper:
                                 await asyncio.sleep(uniform(2, 5))
                                 status = await self.claim_quest_reward(http_client, task_id)
                                 reward = status.get('amount', 0) if isinstance(status, dict) else \
-                                    task.get('rewards', [{}])[0].get('amount')
+                                    task.get('rewards', [{}])[0].get('amount') if len(task.get('rewards', [{}])) else 0
                                 if status:
                                     logger.success(self.log_message(
-                                        f"Successfully completed task <lg>{task.get('title')}</lg> and got "
-                                        f"<lg>{reward}</lg> Paws"))
+                                        f"Successfully completed task <lg>{task.get('title')}</lg>"
+                                        f"{f' and got <lg>{reward}</lg> Paws' if reward else ''}"))
 
                             await asyncio.sleep(uniform(2, 5))
 
