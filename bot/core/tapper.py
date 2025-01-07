@@ -15,7 +15,7 @@ from bot.utils.universal_telegram_client import UniversalTelegramClient
 from bot.config import settings
 from bot.utils import logger, log_error, config_utils, CONFIG_PATH, first_run
 from bot.exceptions import InvalidSession
-from .headers import headers, get_sec_ch_ua
+from .headers import headers_app, headers_pwa, get_sec_ch_ua
 
 API_ENDPOINT = "https://api.paws.community/v1"
 TASKS_WL = {
@@ -59,7 +59,10 @@ TASKS_WL = {
     "6768c30f2e171c1a4d8e3df5": "#PAWSMAS COMING 🐾",
     "6768c3242e171c1a4d8e3df8": "Lil buddy almost had’em, go help!",
     "6768c3312e171c1a4d8e3dfa": "Well done, bud!",
-    "6768c3402e171c1a4d8e3dfc": "Christmas Miracle"
+    "6768c3402e171c1a4d8e3dfc": "Christmas Miracle",
+    "67703cd95a4eb56c5f81a6e9": "Check PAWS TG",
+    "67703cf45a4eb56c5f81a6eb": "Check PAWS X",
+    "67797ea7df75d42c3fff4cc4": "EASY PAWS WEB Access",
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -89,9 +92,12 @@ class Tapper:
             logger.critical(self.log_message('CHECK accounts_config.json as it might be corrupted'))
             exit(-1)
 
-        self.headers = headers.copy()
+        self.headers = headers_app.copy()
+        self.headers_pwa = headers_pwa.copy()
         user_agent = session_config.get('user_agent')
         self.headers['user-agent'] = user_agent
+        self.headers_pwa['user-agent'] = user_agent
+        self.headers_pwa.update(**get_sec_ch_ua(user_agent, False))
         self.headers.update(**get_sec_ch_ua(user_agent))
 
         self.proxy = session_config.get('proxy')
@@ -101,6 +107,7 @@ class Tapper:
 
         self.ref_id = None
         self.access_token = None
+        self.access_token_pwa = None
         self.user_data = None
         self.ref_count = 0
         self.wallet = session_config.get('ton_address')
@@ -157,6 +164,29 @@ class Tapper:
         logger.warning(self.log_message(f"Failed to login. {response.status}"))
         return False
 
+    async def login_pwa(self, http_client: CloudflareScraper, init_data: str):
+        payload = {"data": init_data}
+
+        response = await http_client.post(f"{API_ENDPOINT}/user/auth", json=payload)
+
+        if response.status in range(200, 300):
+            res_data = (await response.json()).get('data')
+            if res_data:
+                self.access_token_pwa = res_data[0]
+                if 'authorization' in http_client.headers:
+                    http_client.headers.pop('authorization')
+                http_client.headers['authorization'] = f"Bearer {self.access_token_pwa}"
+                return True
+
+        logger.warning(self.log_message(f"Failed to login in pwa. {response.status}"))
+        return False
+
+    async def get_user_pwa(self, http_client: CloudflareScraper):
+        resp = await http_client.get(f"{API_ENDPOINT}/user")
+        if resp.status in range(200, 300):
+            resp = await resp.json()
+            return resp.get('success')
+
     async def get_quests(self, http_client: CloudflareScraper, christmas=False):
         response = await http_client.get(f"{API_ENDPOINT}/quests/list{'?type=christmas' if christmas else ''}")
         if response.status in range(200, 300):
@@ -202,6 +232,11 @@ class Tapper:
         if resp.status in range(200, 300):
             return (await resp.json()).get('success', False)
 
+    async def get_ton_payload(self, http_client: CloudflareScraper):
+        resp = await http_client.get(f"{API_ENDPOINT}/wallet/ton/payload")
+        if resp.status in range(200, 300):
+            return await resp.json()
+
     async def add_emoji_to_first_name(self):
         if '🐾' not in self.user_data.get('first_name'):
             await self.tg_client.update_profile(first_name=f"{self.user_data.get('first_name')} 🐾")
@@ -218,8 +253,8 @@ class Tapper:
         ssl_context.minimum_version = ssl.TLSVersion.TLSv1_3
         proxy_conn = ProxyConnector.from_url(self.proxy, ssl=ssl_context) if self.proxy \
             else aiohttp.TCPConnector(ssl_context=ssl_context)
-        async with CloudflareScraper(headers=self.headers, timeout=aiohttp.ClientTimeout(60),
-                                     connector=proxy_conn) as http_client:
+        async with CloudflareScraper(headers=self.headers, timeout=aiohttp.ClientTimeout(60), connector=proxy_conn) as http_client,\
+                CloudflareScraper(headers=self.headers_pwa, timeout=aiohttp.ClientTimeout(60), connector=proxy_conn) as http_client_pwa:
             while True:
                 if not await self.check_proxy(http_client=http_client):
                     logger.warning(self.log_message('Failed to connect to proxy server. Sleep 150 seconds.'))
@@ -290,8 +325,16 @@ class Tapper:
                                     channel_subs += 1
                                     await asyncio.sleep(10)
 
-                            status = await self.complete_quest(http_client, task_id) if \
-                                task.get('progress', {}).get('status', "") != "claimable" else True
+                            if task.get('type') == "pwa":
+                                await self.login_pwa(http_client_pwa, tg_web_data)
+                                pwa_user = await self.get_user_pwa(http_client_pwa)
+                                if pwa_user:
+                                    status = await self.complete_quest(http_client_pwa, task_id) if \
+                                        task.get('progress', {}).get('status', "") != "claimable" else True
+                                await asyncio.sleep(uniform(5, 15))
+                            else:
+                                status = await self.complete_quest(http_client, task_id) if \
+                                    task.get('progress', {}).get('status', "") != "claimable" else True
 
                             # if task.get('_id') == "67532ea5a3770d4f94e38f6f":
                             #     if status:
