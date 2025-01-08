@@ -27,7 +27,7 @@ async def get_main_js_format(base_url):
             try:
                 response.raise_for_status()
                 content = (await response.text()).replace("/script>", "/script>\n")
-                matches = re.findall(r'src="(/.+?main.*?\.js)', content)
+                matches = re.findall(r'src="(/.+?index.*?\.js)', content)
                 return sorted(set(matches), key=len, reverse=True) if matches else None
             except Exception as e:
                 if response.status == 403:

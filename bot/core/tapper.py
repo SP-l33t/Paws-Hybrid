@@ -7,7 +7,7 @@ from urllib.parse import unquote, parse_qs
 from aiocfscrape import CloudflareScraper
 from aiohttp_proxy import ProxyConnector
 from better_proxy import Proxy
-from random import uniform, shuffle
+from random import uniform, shuffle, randint
 from time import time
 
 from bot.utils.universal_telegram_client import UniversalTelegramClient
@@ -63,6 +63,7 @@ TASKS_WL = {
     "67703cd95a4eb56c5f81a6e9": "Check PAWS TG",
     "67703cf45a4eb56c5f81a6eb": "Check PAWS X",
     "67797ea7df75d42c3fff4cc4": "EASY PAWS WEB Access",
+    "677e875ddf75d42c3fff4cc7": "Hide & Seek",
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -196,8 +197,14 @@ class Tapper:
             logger.warning(self.log_message(f"Failed to get quests: {response.status}"))
             return None
 
-    async def complete_quest(self, http_client: CloudflareScraper, quest_id: str):
+    async def complete_quest(self, http_client: CloudflareScraper, quest_id: str, additional_data: bool = True):
         payload = {"questId": quest_id}
+        if additional_data:
+            payload["additionalData"] = {
+                "x": randint(300, 450),
+                "y": randint(300, 450),
+                "timestamp": int(time() * 1000)
+            }
         response = await http_client.post(f"{API_ENDPOINT}/quests/completed", json=payload)
         if response.status in range(200, 300):
             resp_json = await response.json()
@@ -206,8 +213,14 @@ class Tapper:
             logger.warning(self.log_message(f"Failed to complete quest: {response.status}"))
             return None
 
-    async def claim_quest_reward(self, http_client: CloudflareScraper, quest_id: str):
+    async def claim_quest_reward(self, http_client: CloudflareScraper, quest_id: str, additional_data: bool = True):
         payload = {"questId": quest_id}
+        if additional_data:
+            payload["additionalData"] = {
+                "x": randint(300, 450),
+                "y": randint(300, 450),
+                "timestamp": int(time() * 1000)
+            }
         response = await http_client.post(f"{API_ENDPOINT}/quests/claim", json=payload)
         if response.status in range(200, 300):
             resp_json = await response.json()
@@ -333,7 +346,8 @@ class Tapper:
                                         task.get('progress', {}).get('status', "") != "claimable" else True
                                 await asyncio.sleep(uniform(5, 15))
                             else:
-                                status = await self.complete_quest(http_client, task_id) if \
+                                additional_data = False if task_id == "677e875ddf75d42c3fff4cc7" else True
+                                status = await self.complete_quest(http_client, task_id, additional_data) if \
                                     task.get('progress', {}).get('status', "") != "claimable" else True
 
                             # if task.get('_id') == "67532ea5a3770d4f94e38f6f":
