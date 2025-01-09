@@ -64,6 +64,11 @@ TASKS_WL = {
     "67703cf45a4eb56c5f81a6eb": "Check PAWS X",
     "67797ea7df75d42c3fff4cc4": "EASY PAWS WEB Access",
     "677e875ddf75d42c3fff4cc7": "Hide & Seek",
+    "677faa8e2cd0f9fc21b34d84": "Follow REP X",
+    "677faa722cd0f9fc21b34d83": "Follow REP TG",
+    "677faac52cd0f9fc21b34d85": "Follow Tonkeeper's TG",
+    "677faaef2cd0f9fc21b34d86": "Download Tonkeeper",
+    "67717bfb067c823d800e5a14": "Verify via PAWS Web"
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -332,7 +337,7 @@ class Tapper:
                                     continue
                             elif task.get('code') == "emojiName" and not settings.PERFORM_EMOJI_TASK:
                                 continue
-                            elif task.get('code') == 'telegram' and channel_subs < settings.SUBSCRIPTIONS_PER_CYCLE:
+                            elif task.get('code') == 'telegram' and not task.get('partner') and channel_subs < settings.SUBSCRIPTIONS_PER_CYCLE:
                                 if task.get('progress', {}).get('status') != 'claimable':
                                     await self.tg_client.join_and_mute_tg_channel(task.get('data'))
                                     channel_subs += 1
@@ -350,10 +355,10 @@ class Tapper:
                                 status = await self.complete_quest(http_client, task_id, additional_data) if \
                                     task.get('progress', {}).get('status', "") != "claimable" else True
 
-                            # if task.get('_id') == "67532ea5a3770d4f94e38f6f":
-                            #     if status:
-                            #         logger.info(self.log_message(f"Successfully completed task: <lg>{task.get('title')}</lg>. Claim isn't available yet"))
-                            #     continue
+                            if task.get('_id') == "67717bfb067c823d800e5a14":
+                                if status:
+                                    logger.info(self.log_message(f"Successfully completed task: <lg>{task.get('title')}</lg>."))
+                                continue
 
                             if status:
                                 await asyncio.sleep(uniform(2, 5))
