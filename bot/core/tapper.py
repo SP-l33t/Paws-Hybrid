@@ -68,7 +68,8 @@ TASKS_WL = {
     "677faa722cd0f9fc21b34d83": "Follow REP TG",
     "677faac52cd0f9fc21b34d85": "Follow Tonkeeper's TG",
     "677faaef2cd0f9fc21b34d86": "Download Tonkeeper",
-    "67717bfb067c823d800e5a14": "Verify via PAWS Web"
+    "67717bfb067c823d800e5a14": "Verify via PAWS Web",
+    "678556b8ed515bd1fbea8147": "NO TIME TO RUSH"
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -193,8 +194,8 @@ class Tapper:
             resp = await resp.json()
             return resp.get('success')
 
-    async def get_quests(self, http_client: CloudflareScraper, christmas=False):
-        response = await http_client.get(f"{API_ENDPOINT}/quests/list{'?type=christmas' if christmas else ''}")
+    async def get_quests(self, http_client: CloudflareScraper):
+        response = await http_client.get(f"{API_ENDPOINT}/quests/list")
         if response.status in range(200, 300):
             data = (await response.json()).get('data', {})
             return data
@@ -236,7 +237,7 @@ class Tapper:
             logger.warning(self.log_message(f"Failed to claim quest: {response.status}"))
             return False
 
-    async def connect_wallet(self, http_client: CloudflareScraper):
+    async def connect_ton_wallet_app(self, http_client: CloudflareScraper):
         if not self.wallet:
             return
         wallet = {"wallet": self.wallet}
@@ -244,11 +245,6 @@ class Tapper:
         if resp.status in range(200, 300):
             resp_json = await resp.json()
             return resp_json.get('success')
-
-    async def get_grinch(self, http_client: CloudflareScraper):
-        resp = await http_client.post(f"{API_ENDPOINT}/user/grinch", data="")
-        if resp.status in range(200, 300):
-            return (await resp.json()).get('success', False)
 
     async def get_ton_payload(self, http_client: CloudflareScraper):
         resp = await http_client.get(f"{API_ENDPOINT}/wallet/ton/payload")
@@ -310,14 +306,10 @@ class Tapper:
                         channel_subs = 0
                         shuffle(tasks)
 
-                        christmas_tasks = await self.get_quests(http_client, True)
-                        if len([task for task in christmas_tasks if not task.get('progress', {}).get('claimed', True)]):
-                            tasks += christmas_tasks
-                            await asyncio.sleep(1)
-                            await self.get_grinch(http_client)
                         for task in tasks:
-                            if task.get('progress', {}).get('claimed'):
+                            if task.get('progress', {}).get('claimed') or task.get('progress', {}).get('status') == "waiting":
                                 continue
+
                             if task.get('_id') not in TASKS_WL and task.get('_id') not in TASKS_BL:
                                 logger.info(self.log_message(
                                     f"Quest with id: <lc>{task.get('_id')}</lc> and Title: <lc>{task.get('title')}</lc>"
@@ -330,7 +322,7 @@ class Tapper:
                             if task.get("checkRequirements", True) is False and task.get('code') != "emojiName":
                                 pass
                             elif task.get('code') == "wallet":
-                                await self.connect_wallet(http_client)
+                                await self.connect_ton_wallet_app(http_client)
                             elif task.get('code') == "invite":
                                 progress = task.get('progress', {})
                                 if progress.get('current', 0) < progress.get('total', 100):
@@ -355,9 +347,9 @@ class Tapper:
                                 status = await self.complete_quest(http_client, task_id, additional_data) if \
                                     task.get('progress', {}).get('status', "") != "claimable" else True
 
-                            if task.get('_id') == "67717bfb067c823d800e5a14":
+                            if task.get('_id') == "678556b8ed515bd1fbea8147":
                                 if status:
-                                    logger.info(self.log_message(f"Successfully completed task: <lg>{task.get('title')}</lg>."))
+                                    logger.info(self.log_message(f"Successfully started task: <lg>{task.get('title')}</lg>."))
                                 continue
 
                             if status:
