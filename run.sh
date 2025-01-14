@@ -23,7 +23,7 @@ if [ ! -f "venv/installed" ]; then
         echo "requirements.txt not found, skipping dependency installation."
     fi
 else
-    echo "Dependencies already installed, skipping installation."
+    pip install -r requirements.txt >/dev/null 2>&1
 fi
 
 if [ ! -f ".env" ]; then

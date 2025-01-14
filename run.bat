@@ -20,7 +20,7 @@ if not exist venv\Lib\site-packages\installed (
         echo requirements.txt not found, skipping dependency installation.
     )
 ) else (
-    echo Dependencies already installed, skipping installation.
+    pip install -r requirements.txt >nul 2>&1
 )
 
 if not exist .env (

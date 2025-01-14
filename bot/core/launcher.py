@@ -8,7 +8,7 @@ from bot.utils.universal_telegram_client import UniversalTelegramClient
 
 from bot.config import settings
 from bot.core.agents import generate_random_user_agent
-from bot.utils import logger, config_utils, proxy_utils, CONFIG_PATH, SESSIONS_PATH, PROXIES_PATH, build_check, ton
+from bot.utils import logger, config_utils, proxy_utils, CONFIG_PATH, SESSIONS_PATH, PROXIES_PATH, build_check, ton, sol
 from bot.core.tapper import run_tapper
 from bot.core.registrator import register_sessions
 
@@ -106,8 +106,14 @@ async def get_tg_clients() -> list[UniversalTelegramClient]:
                     client_params[key] = api_config[key]
 
         session_config['user_agent'] = session_config.get('user_agent', generate_random_user_agent())
-        if ("ton_address" not in session_config or not session_config['ton_address']) and settings.PERFORM_WALLET_TASK:
-            session_config['ton_address'] = ton.generate_wallet(CONFIG_PATH)
+        if not session_config.get('ton') and settings.CONNECT_WALLETS_WEB:
+            ton_address = session_config.get('ton_address')
+            if ton_address:
+                session_config['ton'] = ton.generate_ton_wallet(config_path=CONFIG_PATH, existing_address=ton_address)
+            else:
+                session_config['ton'] = ton.generate_ton_wallet(CONFIG_PATH)
+        if not session_config.get('sol') and settings.CONNECT_WALLETS_WEB:
+            session_config['sol'] = sol.generate_sol_wallet(CONFIG_PATH)
         api_config.update(api_id=client_params.get('api_id') or client_params.get('api').api_id,
                           api_hash=client_params.get('api_hash') or client_params.get('api').api_hash)
 

@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     PERFORM_EMOJI_TASK: bool = False
     SUBSCRIPTIONS_PER_CYCLE: int = 1
 
+    OVERWRITE_WALLETS: bool = False
+    CONNECT_WALLETS_WEB: bool = True
+
     SESSION_START_DELAY: int = 360
 
     SLEEP_TIME: list[int] = [43200, 86400]

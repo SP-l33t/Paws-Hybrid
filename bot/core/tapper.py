@@ -13,7 +13,7 @@ from time import time
 from bot.utils.universal_telegram_client import UniversalTelegramClient
 
 from bot.config import settings
-from bot.utils import logger, log_error, config_utils, CONFIG_PATH, first_run
+from bot.utils import logger, log_error, config_utils, CONFIG_PATH, first_run, sol, ton
 from bot.exceptions import InvalidSession
 from .headers import headers_app, headers_pwa, get_sec_ch_ua
 
@@ -112,6 +112,12 @@ class Tapper:
             proxy = Proxy.from_str(self.proxy)
             self.tg_client.set_proxy(proxy)
 
+        self.ton_wallet = session_config.get('ton')
+        self.sol_wallet = session_config.get('sol')
+
+        self.sol_connected = None
+        self.ton_connected = None
+
         self.ref_id = None
         self.access_token = None
         self.access_token_pwa = None
@@ -156,6 +162,9 @@ class Tapper:
             res_data = (await response.json()).get('data')
             if res_data:
                 self.access_token = res_data[0]
+                if len(res_data) > 1:
+                    self.sol_connected = res_data[1].get('userData', {}).get('proofSolanaWallet')
+                    self.ton_connected = res_data[1].get('userData', {}).get('proofTonWallet')
                 if 'authorization' in http_client.headers:
                     http_client.headers.pop('authorization')
                 http_client.headers['authorization'] = f"Bearer {self.access_token}"
@@ -180,6 +189,9 @@ class Tapper:
             res_data = (await response.json()).get('data')
             if res_data:
                 self.access_token_pwa = res_data[0]
+                if len(res_data) > 1:
+                    self.sol_connected = res_data[1].get('userData', {}).get('proofSolanaWallet')
+                    self.ton_connected = res_data[1].get('userData', {}).get('proofTonWallet')
                 if 'authorization' in http_client.headers:
                     http_client.headers.pop('authorization')
                 http_client.headers['authorization'] = f"Bearer {self.access_token_pwa}"
@@ -250,6 +262,29 @@ class Tapper:
         resp = await http_client.get(f"{API_ENDPOINT}/wallet/ton/payload")
         if resp.status in range(200, 300):
             return await resp.json()
+
+    async def get_sol_payload(self, http_client: CloudflareScraper):
+        resp = await http_client.get(f"{API_ENDPOINT}/wallet/solana/payload")
+        if resp.status in range(200, 300):
+            return (await resp.json()).get('data')
+
+    async def connect_sol_web(self, http_client: CloudflareScraper, token: str):
+        keypair = sol.import_sol_wallet(self.sol_wallet.get('private_key'))
+        signature = sol.generate_sol_signature(keypair, token.encode("utf-8"))
+        payload = {
+            "signature": str(signature),
+            "publicKey": str(keypair.pubkey()),
+            "token": token
+        }
+        resp = await http_client.post(f"{API_ENDPOINT}/wallet/solana/check_proof", json=payload)
+        if resp.status in range(200, 300):
+            resp_json = await resp.json()
+            return resp_json.get('success') and resp_json.get('data')
+
+    async def disconnect_sol_web(self, http_client: CloudflareScraper):
+        resp = await http_client.post(f"{API_ENDPOINT}/wallet/solana/reset")
+        if resp.status in range(200, 300):
+            return (await resp.json()).get('success')
 
     async def add_emoji_to_first_name(self):
         if '🐾' not in self.user_data.get('first_name'):
@@ -347,7 +382,7 @@ class Tapper:
                                 status = await self.complete_quest(http_client, task_id, additional_data) if \
                                     task.get('progress', {}).get('status', "") != "claimable" else True
 
-                            if task.get('_id') == "678556b8ed515bd1fbea8147":
+                            if task.get('_id') == "678556b8ed515bd1fbea8147" and task.get('progress', {}).get('status', "") != "claimable":
                                 if status:
                                     logger.info(self.log_message(f"Successfully started task: <lg>{task.get('title')}</lg>."))
                                 continue
@@ -363,6 +398,29 @@ class Tapper:
                                         f"{f' and got <lg>{reward}</lg> Paws' if reward else ''}"))
 
                             await asyncio.sleep(uniform(2, 5))
+
+                    if settings.CONNECT_WALLETS_WEB:
+                        if settings.OVERWRITE_WALLETS:
+                            if self.sol_connected != self.sol_wallet.get('public_key'):
+                                logger.warning(self.log_message(f"SOL Wallets mismatch: "
+                                                                f"SOL connected: <ly>{self.sol_connected}</ly>. "
+                                                                f"SOL in settings <ly>{self.sol_wallet.get('public_key')}</ly>"))
+                                if not http_client_pwa.headers.get('authorization'):
+                                    await self.login_pwa(http_client_pwa, tg_web_data)
+                                    await asyncio.sleep(uniform(2, 5))
+                                if await self.disconnect_sol_web(http_client_pwa):
+                                    await asyncio.sleep(2, 4)
+                                    self.sol_connected = None
+
+                        if not self.sol_connected:
+                            if not http_client_pwa.headers.get('authorization'):
+                                await self.login_pwa(http_client_pwa, tg_web_data)
+                                await asyncio.sleep(uniform(2, 5))
+                            payload = await self.get_sol_payload(http_client_pwa)
+                            await asyncio.sleep(uniform(15, 30))
+                            if payload and await self.connect_sol_web(http_client_pwa, payload):
+                                logger.success(self.log_message(f"Successfully connected SOL wallet: "
+                                                                f"{self.sol_wallet.get('public_key')}"))
 
                     logger.info(self.log_message(f"All activities for the current session have been completed"))
                     return
