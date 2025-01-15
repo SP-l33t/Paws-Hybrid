@@ -123,7 +123,7 @@ class Tapper:
         self.access_token_pwa = None
         self.user_data = None
         self.ref_count = 0
-        self.wallet = session_config.get('ton_address')
+        self.wallet = session_config.get('ton', {}).get('wallet_address')
 
     def log_message(self, message) -> str:
         return f"<ly>{self.session_name}</ly> | {message}"
@@ -171,7 +171,9 @@ class Tapper:
                 if None in res_data:
                     balance = res_data[1].get('gameData', {}).get('balance')
                     self.ref_count = res_data[1].get('referralData', {}).get('referralsCount', 0)
-                    logger.success(self.log_message(f"Logged in Successfully | Balance {balance}"))
+                    logger.success(self.log_message(f"Logged in Successfully | Balance: <lc>{balance}</lc> | "
+                                                    f"SOL: <lc>{self.sol_connected}</lc> | "
+                                                    f"TON: <lc>{self.ton_connected}</lc>"))
                 else:
                     balance = res_data[2].get('total')
                     logger.success(self.log_message(f"Registered successfully | Balance {balance}"))
@@ -282,7 +284,7 @@ class Tapper:
             return resp_json.get('success') and resp_json.get('data')
 
     async def disconnect_sol_web(self, http_client: CloudflareScraper):
-        resp = await http_client.post(f"{API_ENDPOINT}/wallet/solana/reset")
+        resp = await http_client.post(f"{API_ENDPOINT}/wallet/solana/reset", data="")
         if resp.status in range(200, 300):
             return (await resp.json()).get('success')
 
@@ -409,6 +411,7 @@ class Tapper:
                                     await self.login_pwa(http_client_pwa, tg_web_data)
                                     await asyncio.sleep(uniform(2, 5))
                                 if await self.disconnect_sol_web(http_client_pwa):
+                                    logger.info(self.log_message("Successfully disconnected wallet"))
                                     await asyncio.sleep(2, 4)
                                     self.sol_connected = None
 
@@ -420,7 +423,7 @@ class Tapper:
                             await asyncio.sleep(uniform(15, 30))
                             if payload and await self.connect_sol_web(http_client_pwa, payload):
                                 logger.success(self.log_message(f"Successfully connected SOL wallet: "
-                                                                f"{self.sol_wallet.get('public_key')}"))
+                                                                f"<ly>{self.sol_wallet.get('public_key')}</ly>"))
 
                     logger.info(self.log_message(f"All activities for the current session have been completed"))
                     return
