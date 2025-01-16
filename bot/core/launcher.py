@@ -163,7 +163,7 @@ async def init_config_file():
 async def run_tasks():
     await config_utils.restructure_config(CONFIG_PATH)
     await init_config_file()
-    await build_check.check_base_url()
+    await build_check.check_updates()
     tg_clients = await get_tg_clients()
     tasks = [asyncio.create_task(run_tapper(tg_client=tg_client)) for tg_client in tg_clients]
     tasks.append(asyncio.create_task(build_check.check_bot_update_loop(2000)))
