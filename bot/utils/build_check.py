@@ -48,6 +48,8 @@ async def get_js_hash(path):
     async with aiohttp.request(url=appUrl+path, method="GET", headers=headers) as response:
         if response.status in range(200, 300):
             return sha256((await response.text()).encode('utf-8')).hexdigest()
+        else:
+            logger.error(f"Failed to get hash for: {appUrl+path}, status code: {response.status}")
 
 
 async def check_base_url():
@@ -65,6 +67,10 @@ async def check_base_url():
                     if live_hash == last_actual_hash:
                         logger.success(f"No changes in main js file: <green>{last_actual_js}</green>")
                         not_updated = True
+                    else:
+                        logger.error(
+                            f"WEB Main JS updated. New file name: <lr>'{js}'</lr>. Hash: '<lr>{await get_js_hash(js)}</lr>'")
+                        break
             if not not_updated:
                 logger.error(f"Main JS updated. New file name: <lr>'{js}'</lr>. Hash: '<lr>{await get_js_hash(js)}</lr>'")
         else:
