@@ -69,7 +69,8 @@ TASKS_WL = {
     "677faac52cd0f9fc21b34d85": "Follow Tonkeeper's TG",
     "677faaef2cd0f9fc21b34d86": "Download Tonkeeper",
     "67717bfb067c823d800e5a14": "Verify via PAWS Web",
-    "678556b8ed515bd1fbea8147": "NO TIME TO RUSH"
+    "678556b8ed515bd1fbea8147": "NO TIME TO RUSH",
+    "67867e662397c64561caa4f6": "FIND ME PAWS",
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -82,6 +83,10 @@ TASKS_BL = {
     "6754c1065de2c352526ab324": "Mystery Quest",
     "6756c53f0284d9d7b208dd50": "Lucky Block"
 }
+
+NO_ADDITIONAL_DATA = ["67867e662397c64561caa4f6"]
+
+CODE = "oSmGOqWsuFNw"
 
 
 def sanitize_string(input_str: str):
@@ -233,6 +238,16 @@ class Tapper:
             logger.warning(self.log_message(f"Failed to complete quest: {response.status}"))
             return None
 
+    async def custom_complete_quest(self, http_client: CloudflareScraper, quest_id: str, code: str):
+        payload = {"questId": quest_id, "code": code}
+        response = await http_client.post(f"{API_ENDPOINT}/quests/custom", json=payload)
+        if response.status in range(200, 300):
+            resp_json = await response.json()
+            return resp_json.get('success') and resp_json.get('data')
+        else:
+            logger.warning(self.log_message(f"Failed to complete quest: {response.status}"))
+            return None
+
     async def claim_quest_reward(self, http_client: CloudflareScraper, quest_id: str, additional_data: bool = True):
         payload = {"questId": quest_id}
         if additional_data:
@@ -373,12 +388,21 @@ class Tapper:
                                     await asyncio.sleep(10)
 
                             if task.get('type') == "pwa":
-                                await self.login_pwa(http_client_pwa, tg_web_data)
-                                pwa_user = await self.get_user_pwa(http_client_pwa)
-                                if pwa_user:
-                                    status = await self.complete_quest(http_client_pwa, task_id) if \
-                                        task.get('progress', {}).get('status', "") != "claimable" else True
-                                await asyncio.sleep(uniform(5, 15))
+                                if not http_client_pwa.headers.get('authorization') and task.get('progress', {}).get('status', "") != "claimable":
+                                    await self.login_pwa(http_client_pwa, tg_web_data)
+                                    await asyncio.sleep(uniform(2, 5))
+                                    pwa_user = await self.get_user_pwa(http_client_pwa)
+                                    if pwa_user:
+                                        if task_id == "67867e662397c64561caa4f6":
+                                            status = await self.custom_complete_quest(http_client_pwa, task_id, CODE) if \
+                                                task.get('progress', {}).get('status', "") != "claimable" else True
+                                            continue
+                                        else:
+                                            status = await self.complete_quest(http_client_pwa, task_id) if \
+                                                task.get('progress', {}).get('status', "") != "claimable" else True
+                                    await asyncio.sleep(uniform(5, 15))
+                                else:
+                                    status = True
                             else:
                                 additional_data = False if task_id == "677e875ddf75d42c3fff4cc7" else True
                                 status = await self.complete_quest(http_client, task_id, additional_data) if \
@@ -391,7 +415,7 @@ class Tapper:
 
                             if status:
                                 await asyncio.sleep(uniform(2, 5))
-                                status = await self.claim_quest_reward(http_client, task_id)
+                                status = await self.claim_quest_reward(http_client, task_id) if task_id not in NO_ADDITIONAL_DATA else await self.claim_quest_reward(http_client, task_id, False)
                                 reward = status.get('amount', 0) if isinstance(status, dict) else \
                                     task.get('rewards', [{}])[0].get('amount') if len(task.get('rewards', [{}])) else 0
                                 if status:
@@ -403,7 +427,7 @@ class Tapper:
 
                     if settings.CONNECT_WALLETS_WEB:
                         if settings.OVERWRITE_WALLETS:
-                            if self.sol_connected != self.sol_wallet.get('public_key'):
+                            if self.sol_connected and self.sol_connected != self.sol_wallet.get('public_key'):
                                 logger.warning(self.log_message(f"SOL Wallets mismatch: "
                                                                 f"SOL connected: <ly>{self.sol_connected}</ly>. "
                                                                 f"SOL in settings <ly>{self.sol_wallet.get('public_key')}</ly>"))
