@@ -71,6 +71,7 @@ TASKS_WL = {
     "67717bfb067c823d800e5a14": "Verify via PAWS Web",
     "678556b8ed515bd1fbea8147": "NO TIME TO RUSH",
     "67867e662397c64561caa4f6": "FIND ME PAWS",
+    "67898a6b31c13aecab68289c": "Check PAWS TG"
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
