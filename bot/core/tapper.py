@@ -71,7 +71,8 @@ TASKS_WL = {
     "67717bfb067c823d800e5a14": "Verify via PAWS Web",
     "678556b8ed515bd1fbea8147": "NO TIME TO RUSH",
     "67867e662397c64561caa4f6": "FIND ME PAWS",
-    "67898a6b31c13aecab68289c": "Check PAWS TG"
+    "67898a6b31c13aecab68289c": "Check PAWS TG",
+    "67814ddc6806dce25e57fe20": "Connect wallets via Web",
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -170,7 +171,8 @@ class Tapper:
                 self.access_token = res_data[0]
                 if len(res_data) > 1:
                     self.sol_connected = res_data[1].get('userData', {}).get('proofSolanaWallet')
-                    self.ton_connected = res_data[1].get('userData', {}).get('proofTonWallet')
+                    ton_hex_addr = res_data[1].get('userData', {}).get('proofTonWallet')
+                    self.ton_connected = ton.hex_to_uf_address(ton_hex_addr) if ton_hex_addr else ton_hex_addr
                 if 'authorization' in http_client.headers:
                     http_client.headers.pop('authorization')
                 http_client.headers['authorization'] = f"Bearer {self.access_token}"
@@ -223,12 +225,12 @@ class Tapper:
             logger.warning(self.log_message(f"Failed to get quests: {response.status}"))
             return None
 
-    async def complete_quest(self, http_client: CloudflareScraper, quest_id: str, additional_data: bool = True):
+    async def complete_quest(self, http_client: CloudflareScraper, quest_id: str, x: int = None, y: int = None):
         payload = {"questId": quest_id}
-        if additional_data:
+        if x and y:
             payload["additionalData"] = {
-                "x": randint(300, 450),
-                "y": randint(300, 450),
+                "x": x,
+                "y": y,
                 "timestamp": int(time() * 1000)
             }
         response = await http_client.post(f"{API_ENDPOINT}/quests/completed", json=payload)
@@ -279,7 +281,7 @@ class Tapper:
     async def get_ton_payload(self, http_client: CloudflareScraper):
         resp = await http_client.get(f"{API_ENDPOINT}/wallet/ton/payload")
         if resp.status in range(200, 300):
-            return await resp.json()
+            return (await resp.json()).get('data')
 
     async def get_sol_payload(self, http_client: CloudflareScraper):
         resp = await http_client.get(f"{API_ENDPOINT}/wallet/solana/payload")
@@ -299,8 +301,20 @@ class Tapper:
             resp_json = await resp.json()
             return resp_json.get('success') and resp_json.get('data')
 
+    async def connect_ton_web(self, http_client: CloudflareScraper, token: str):
+        payload = ton.generate_ton_proof_v2(self.ton_wallet.get("mnemonic_phrase"), "app.paws.community", token)
+        resp = await http_client.post(f"{API_ENDPOINT}/wallet/ton/check_proof", json=payload)
+        if resp.status in range(200, 300):
+            resp_json = await resp.json()
+            return resp_json.get('success') and resp_json.get('data')
+
     async def disconnect_sol_web(self, http_client: CloudflareScraper):
         resp = await http_client.post(f"{API_ENDPOINT}/wallet/solana/reset", data="")
+        if resp.status in range(200, 300):
+            return (await resp.json()).get('success')
+
+    async def disconnect_ton_web(self, http_client: CloudflareScraper):
+        resp = await http_client.post(f"{API_ENDPOINT}/wallet/ton/reset", data="")
         if resp.status in range(200, 300):
             return (await resp.json()).get('success')
 
@@ -360,18 +374,20 @@ class Tapper:
                         shuffle(tasks)
 
                         for task in tasks:
+                            task_id = task.get('_id')
                             if task.get('progress', {}).get('claimed') or task.get('progress', {}).get('status') == "waiting":
                                 continue
+                            if task_id == "67814ddc6806dce25e57fe20" and not (self.sol_connected and self.ton_connected):
+                                continue
 
-                            if task.get('_id') not in TASKS_WL and task.get('_id') not in TASKS_BL:
+                            if task_id not in TASKS_WL and task_id not in TASKS_BL:
                                 logger.info(self.log_message(
-                                    f"Quest with id: <lc>{task.get('_id')}</lc> and Title: <lc>{task.get('title')}</lc>"
+                                    f"Quest with id: <lc>{task_id}</lc> and Title: <lc>{sanitize_string(task.get('title'))}</lc>"
                                     f" is not present in the white and black lists"))
                                 continue
-                            elif task.get('_id') in TASKS_BL:
+                            elif task_id in TASKS_BL:
                                 continue
 
-                            task_id = task.get('_id')
                             if task.get("checkRequirements", True) is False and task.get('code') != "emojiName":
                                 pass
                             elif task.get('code') == "wallet":
@@ -405,13 +421,18 @@ class Tapper:
                                 else:
                                     status = True
                             else:
-                                additional_data = False if task_id == "677e875ddf75d42c3fff4cc7" else True
-                                status = await self.complete_quest(http_client, task_id, additional_data) if \
+                                additional_data = {} if task_id == "677e875ddf75d42c3fff4cc7" else \
+                                    {'x': -1, 'y': -1} if task_id == "67814ddc6806dce25e57fe20" else \
+                                    {'x': randint(300, 450), 'y': randint(300, 450)}
+                                status = await self.complete_quest(http_client, task_id, **additional_data) if \
                                     task.get('progress', {}).get('status', "") != "claimable" else True
 
-                            if task.get('_id') == "678556b8ed515bd1fbea8147" and task.get('progress', {}).get('status', "") != "claimable":
+                            if task_id == "678556b8ed515bd1fbea8147" and task.get('progress', {}).get('status', "") != "claimable":
                                 if status:
                                     logger.info(self.log_message(f"Successfully started task: <lg>{task.get('title')}</lg>."))
+                                continue
+                            elif task_id == "67814ddc6806dce25e57fe20" and status:
+                                logger.info(self.log_message(f"Successfully completed task: <lg>{task.get('title')}</lg>."))
                                 continue
 
                             if status:
@@ -430,8 +451,8 @@ class Tapper:
                         if settings.OVERWRITE_WALLETS:
                             if self.sol_connected and self.sol_connected != self.sol_wallet.get('public_key'):
                                 logger.warning(self.log_message(f"SOL Wallets mismatch: "
-                                                                f"SOL connected: <ly>{self.sol_connected}</ly>. "
-                                                                f"SOL in settings <ly>{self.sol_wallet.get('public_key')}</ly>"))
+                                                                f"Connected: <ly>{self.sol_connected}</ly>. "
+                                                                f"Config <ly>{self.sol_wallet.get('public_key')}</ly>"))
                                 if not http_client_pwa.headers.get('authorization'):
                                     await self.login_pwa(http_client_pwa, tg_web_data)
                                     await asyncio.sleep(uniform(2, 5))
@@ -439,6 +460,18 @@ class Tapper:
                                     logger.info(self.log_message("Successfully disconnected wallet"))
                                     await asyncio.sleep(2, 4)
                                     self.sol_connected = None
+
+                            if self.ton_connected and self.ton_connected != self.ton_wallet.get('wallet_address'):
+                                logger.warning(self.log_message(f"TON Wallets mismatch: "
+                                                                f"Connected: <ly>{self.ton_connected}</ly>. "
+                                                                f"Config <ly>{self.ton_wallet.get('public_key')}</ly>"))
+                                if not http_client_pwa.headers.get('authorization'):
+                                    await self.login_pwa(http_client_pwa, tg_web_data)
+                                    await asyncio.sleep(uniform(2, 5))
+                                if await self.disconnect_ton_web(http_client_pwa):
+                                    logger.info(self.log_message("Successfully disconnected wallet"))
+                                    await asyncio.sleep(2, 4)
+                                    self.ton_connected = None
 
                         if not self.sol_connected:
                             if not http_client_pwa.headers.get('authorization'):
@@ -449,6 +482,20 @@ class Tapper:
                             if payload and await self.connect_sol_web(http_client_pwa, payload):
                                 logger.success(self.log_message(f"Successfully connected SOL wallet: "
                                                                 f"<ly>{self.sol_wallet.get('public_key')}</ly>"))
+
+                        if not self.ton_connected:
+                            if not self.ton_wallet.get('mnemonic_phrase'):
+                                logger.info(self.log_message("No Mnemonic found in config. "
+                                                             "Edit config and restart the script"))
+                            else:
+                                if not http_client_pwa.headers.get('authorization'):
+                                    await self.login_pwa(http_client_pwa, tg_web_data)
+                                    await asyncio.sleep(uniform(2, 5))
+                                payload = await self.get_ton_payload(http_client_pwa)
+                                await asyncio.sleep(uniform(15, 30))
+                                if payload and await self.connect_ton_web(http_client_pwa, payload):
+                                    logger.success(self.log_message(f"Successfully connected TON wallet: "
+                                                                    f"<ly>{self.ton_wallet.get('wallet_address')}</ly>"))
 
                     logger.info(self.log_message(f"All activities for the current session have been completed"))
                     return
