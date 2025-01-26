@@ -73,6 +73,7 @@ TASKS_WL = {
     "67867e662397c64561caa4f6": "FIND ME PAWS",
     "67898a6b31c13aecab68289c": "Check PAWS TG",
     "67814ddc6806dce25e57fe20": "Connect wallets via Web",
+    "6793b2731c49bcc7f16aa817": "Join DONOT community in X"
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -375,6 +376,7 @@ class Tapper:
 
                         for task in tasks:
                             task_id = task.get('_id')
+                            task_title = sanitize_string(task.get('title'))
                             if task.get('progress', {}).get('claimed') or task.get('progress', {}).get('status') == "waiting":
                                 continue
                             if task_id == "67814ddc6806dce25e57fe20" and not (self.sol_connected and self.ton_connected):
@@ -382,7 +384,7 @@ class Tapper:
 
                             if task_id not in TASKS_WL and task_id not in TASKS_BL:
                                 logger.info(self.log_message(
-                                    f"Quest with id: <lc>{task_id}</lc> and Title: <lc>{sanitize_string(task.get('title'))}</lc>"
+                                    f"Quest with id: <lc>{task_id}</lc> and Title: <lc>{task_title}</lc>"
                                     f" is not present in the white and black lists"))
                                 continue
                             elif task_id in TASKS_BL:
@@ -429,10 +431,10 @@ class Tapper:
 
                             if task_id == "678556b8ed515bd1fbea8147" and task.get('progress', {}).get('status', "") != "claimable":
                                 if status:
-                                    logger.info(self.log_message(f"Successfully started task: <lg>{task.get('title')}</lg>."))
+                                    logger.info(self.log_message(f"Successfully started task: <lg>{task_title}</lg>."))
                                 continue
                             elif task_id == "67814ddc6806dce25e57fe20" and status:
-                                logger.info(self.log_message(f"Successfully completed task: <lg>{task.get('title')}</lg>."))
+                                logger.info(self.log_message(f"Successfully completed task: <lg>{task_title}</lg>."))
                                 continue
 
                             if status:
@@ -442,7 +444,7 @@ class Tapper:
                                     task.get('rewards', [{}])[0].get('amount') if len(task.get('rewards', [{}])) else 0
                                 if status:
                                     logger.success(self.log_message(
-                                        f"Successfully completed task <lg>{task.get('title')}</lg>"
+                                        f"Successfully completed task <lg>{task_title}</lg>"
                                         f"{f' and got <lg>{reward}</lg> Paws' if reward else ''}"))
 
                             await asyncio.sleep(uniform(2, 5))
