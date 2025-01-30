@@ -72,8 +72,12 @@ class UniversalTelegramClient:
             else await self._telethon_get_webview_url(bot_username, bot_url, default_val)
 
     async def join_and_mute_tg_channel(self, link: str):
-        return await self._pyrogram_join_and_mute_tg_channel(link) if self.is_pyrogram \
-            else await self._telethon_join_and_mute_tg_channel(link)
+        for i in range(3):
+            fl = await self._pyrogram_join_and_mute_tg_channel(link) if self.is_pyrogram \
+                else await self._telethon_join_and_mute_tg_channel(link)
+            if not fl:
+                return
+            await asyncio.sleep(fl + uniform(1, 5))
 
     async def update_profile(self, first_name: str = None, last_name: str = None, about: str = None):
         return await self._pyrogram_update_profile(first_name=first_name, last_name=last_name, about=about) if self.is_pyrogram \
@@ -310,8 +314,9 @@ class UniversalTelegramClient:
 
                     logger.info(f"<ly>{self.session_name}</ly> | Subscribed to channel: <y>{channel_title}</y>")
                 except FloodWaitError as fl:
-                    logger.warning(f"<ly>{self.session_name}</ly> | FloodWait {fl}. Waiting {fl.seconds}s")
-                    return fl.seconds
+                    fl_timer = fl.seconds
+                    logger.warning(f"<ly>{self.session_name}</ly> | FloodWait: {fl}. Waiting {fl_timer}s")
+                    return fl_timer
                 except Exception as e:
                     log_error(
                         f"<ly>{self.session_name}</ly> | (Task) Error while subscribing to tg channel {link}: {e}")
@@ -351,8 +356,9 @@ class UniversalTelegramClient:
 
                     logger.info(f"<ly>{self.session_name}</ly> | Subscribed to channel: <y>{channel_title}</y>")
                 except FloodWait as e:
-                    logger.warning(f"<ly>{self.session_name}</ly> | FloodWait {e}. Waiting {e.value}s")
-                    return e.value
+                    fl_timer = e.value
+                    logger.warning(f"<ly>{self.session_name}</ly> | FloodWait {e}. Waiting {fl_timer}s")
+                    return fl_timer
                 except UserAlreadyParticipant:
                     logger.info(f"<ly>{self.session_name}</ly> | Was already Subscribed to channel: <y>{link}</y>")
                 except Exception as e:
