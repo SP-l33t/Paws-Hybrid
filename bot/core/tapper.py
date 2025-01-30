@@ -73,7 +73,12 @@ TASKS_WL = {
     "67867e662397c64561caa4f6": "FIND ME PAWS",
     "67898a6b31c13aecab68289c": "Check PAWS TG",
     "67814ddc6806dce25e57fe20": "Connect wallets via Web",
-    "6793b2731c49bcc7f16aa817": "Join DONOT community in X"
+    "6793b2731c49bcc7f16aa817": "Join DONOT community in X",
+    "6798d977ff2e2506ca57b3e8": "Follow Buzzit X",
+    "679a306ca30cce7d9db598dc": "Follow Roko",
+    "6798d93aff2e2506ca57b3e5": "Follow Buzzit Channel",
+    "679bc06e70efab8b96d0efdf": "Join PAWS Discord!",
+    "679bcd2270efab8b96d0efe1": "Follow ARMIN",
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -88,6 +93,7 @@ TASKS_BL = {
 }
 
 NO_ADDITIONAL_DATA = ["67867e662397c64561caa4f6"]
+NO_TG_SUB_NEEDED = ["6798d977ff2e2506ca57b3e8", "679a306ca30cce7d9db598dc"]
 
 CODE = "oSmGOqWsuFNw"
 
@@ -400,7 +406,7 @@ class Tapper:
                                     continue
                             elif task.get('code') == "emojiName" and not settings.PERFORM_EMOJI_TASK:
                                 continue
-                            elif task.get('code') == 'telegram' and not task.get('partner') and channel_subs < settings.SUBSCRIPTIONS_PER_CYCLE:
+                            elif task.get('code') == 'telegram' and task_id not in NO_TG_SUB_NEEDED and channel_subs < settings.SUBSCRIPTIONS_PER_CYCLE:
                                 if task.get('progress', {}).get('status') != 'claimable':
                                     await self.tg_client.join_and_mute_tg_channel(task.get('data'))
                                     channel_subs += 1
