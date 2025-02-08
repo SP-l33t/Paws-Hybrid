@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     PERFORM_EMOJI_TASK: bool = False
     SUBSCRIPTIONS_PER_CYCLE: int = 1
 
+    TWOCAPTCHA_API: str = None
+
     OVERWRITE_WALLETS: bool = False
     CONNECT_WALLETS_WEB: bool = True
 

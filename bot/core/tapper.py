@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+import concurrent.futures
 import json
 import re
 import ssl
@@ -9,6 +10,7 @@ from aiohttp_proxy import ProxyConnector
 from better_proxy import Proxy
 from random import uniform, shuffle, randint
 from time import time
+from twocaptcha import TwoCaptcha
 
 from bot.utils.universal_telegram_client import UniversalTelegramClient
 
@@ -79,6 +81,7 @@ TASKS_WL = {
     "6798d93aff2e2506ca57b3e5": "Follow Buzzit Channel",
     "679bc06e70efab8b96d0efdf": "Join PAWS Discord!",
     "679bcd2270efab8b96d0efe1": "Follow ARMIN",
+    "67a52a71df75d42c3fff4cd7": "Follow DUDE",
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -93,7 +96,16 @@ TASKS_BL = {
 }
 
 NO_ADDITIONAL_DATA = ["67867e662397c64561caa4f6"]
-NO_TG_SUB_NEEDED = ["6798d977ff2e2506ca57b3e8", "679a306ca30cce7d9db598dc", "679bc06e70efab8b96d0efdf"]
+NO_TG_SUB_NEEDED = ["6798d977ff2e2506ca57b3e8",
+                    "679a306ca30cce7d9db598dc",
+                    "679bc06e70efab8b96d0efdf",
+                    "67a52a71df75d42c3fff4cd7"]
+
+AIRDROP_CRITERIAS = ["completedQuestsCounter",
+                     "userReferrals",
+                     "verifiedOnWebsite",
+                     "grinchRemoved",
+                     "activityCheck"]
 
 CODE = "oSmGOqWsuFNw"
 
@@ -208,7 +220,8 @@ class Tapper:
                 self.access_token_pwa = res_data[0]
                 if len(res_data) > 1:
                     self.sol_connected = res_data[1].get('userData', {}).get('proofSolanaWallet')
-                    self.ton_connected = res_data[1].get('userData', {}).get('proofTonWallet')
+                    ton_hex_addr = res_data[1].get('userData', {}).get('proofTonWallet')
+                    self.ton_connected = ton.hex_to_uf_address(ton_hex_addr) if ton_hex_addr else ton_hex_addr
                 if 'authorization' in http_client.headers:
                     http_client.headers.pop('authorization')
                 http_client.headers['authorization'] = f"Bearer {self.access_token_pwa}"
@@ -294,6 +307,47 @@ class Tapper:
         resp = await http_client.get(f"{API_ENDPOINT}/wallet/solana/payload")
         if resp.status in range(200, 300):
             return (await resp.json()).get('data')
+
+    async def check_eligibility(self, http_client: CloudflareScraper) -> list[dict]:
+        resp = await http_client.get(f"{API_ENDPOINT}/eligibility")
+        if resp.status in range(200, 300):
+            return (await resp.json()).get('data')
+        return []
+
+    async def solve_captcha(self) -> dict:
+        solver = TwoCaptcha(settings.TWOCAPTCHA_API)
+        for i in range(5):
+            try:
+                balance = solver.balance()
+                if balance > 0.1:
+                    logger.info(self.log_message(f'2Captcha Balance: {solver.balance()}'))
+                else:
+                    logger.warning(self.log_message(f'2Captcha Balance is too low: {balance}'))
+                    return {}
+                loop = asyncio.get_running_loop()
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    return await loop.run_in_executor(pool,
+                                                      lambda: solver.recaptcha(sitekey="6Lda_s0qAAAAAItgCSBeQN_DVlM9YOk9MccqMG6_",
+                                                                               url="https://paws.community/app?tab=claim",
+                                                                               version='v2',
+                                                                               enterprise=1,
+                                                                               userAgent=self.headers['user-agent'],
+                                                                               action="submit",
+                                                                               softId=4801))
+            except Exception as e:
+                logger.warning(self.log_message(f'Failed to solve captcha. Retrying {e}'))
+                await asyncio.sleep(uniform(5, 10))
+                return await self.solve_captcha()
+
+    async def complete_activity_check(self, http_client: CloudflareScraper):
+        recap = await self.solve_captcha()
+        if not recap.get('code'):
+            return False
+        payload = {"recaptchaToken": recap.get('code')}
+        resp = await http_client.post(f"{API_ENDPOINT}/user/activity", json=payload)
+        if resp.status in range(200, 300):
+            resp = await resp.json()
+            return resp.get('success') and resp.get('data')
 
     async def connect_sol_web(self, http_client: CloudflareScraper, token: str):
         keypair = sol.import_sol_wallet(self.sol_wallet.get('private_key'))
@@ -455,15 +509,16 @@ class Tapper:
 
                             await asyncio.sleep(uniform(2, 5))
 
+                    if not http_client_pwa.headers.get('authorization'):
+                        await self.login_pwa(http_client_pwa, tg_web_data)
+                        await asyncio.sleep(uniform(2, 5))
+
                     if settings.CONNECT_WALLETS_WEB:
                         if settings.OVERWRITE_WALLETS:
                             if self.sol_connected and self.sol_connected != self.sol_wallet.get('public_key'):
                                 logger.warning(self.log_message(f"SOL Wallets mismatch: "
                                                                 f"Connected: <ly>{self.sol_connected}</ly>. "
                                                                 f"Config <ly>{self.sol_wallet.get('public_key')}</ly>"))
-                                if not http_client_pwa.headers.get('authorization'):
-                                    await self.login_pwa(http_client_pwa, tg_web_data)
-                                    await asyncio.sleep(uniform(2, 5))
                                 if await self.disconnect_sol_web(http_client_pwa):
                                     logger.info(self.log_message("Successfully disconnected wallet"))
                                     await asyncio.sleep(2, 4)
@@ -472,19 +527,13 @@ class Tapper:
                             if self.ton_connected and self.ton_connected != self.ton_wallet.get('wallet_address'):
                                 logger.warning(self.log_message(f"TON Wallets mismatch: "
                                                                 f"Connected: <ly>{self.ton_connected}</ly>. "
-                                                                f"Config <ly>{self.ton_wallet.get('public_key')}</ly>"))
-                                if not http_client_pwa.headers.get('authorization'):
-                                    await self.login_pwa(http_client_pwa, tg_web_data)
-                                    await asyncio.sleep(uniform(2, 5))
+                                                                f"Config <ly>{self.ton_wallet.get('wallet_address')}</ly>"))
                                 if await self.disconnect_ton_web(http_client_pwa):
                                     logger.info(self.log_message("Successfully disconnected wallet"))
                                     await asyncio.sleep(2, 4)
                                     self.ton_connected = None
 
                         if not self.sol_connected:
-                            if not http_client_pwa.headers.get('authorization'):
-                                await self.login_pwa(http_client_pwa, tg_web_data)
-                                await asyncio.sleep(uniform(2, 5))
                             payload = await self.get_sol_payload(http_client_pwa)
                             await asyncio.sleep(uniform(15, 30))
                             if payload and await self.connect_sol_web(http_client_pwa, payload):
@@ -496,14 +545,51 @@ class Tapper:
                                 logger.info(self.log_message("No Mnemonic found in config. "
                                                              "Edit config and restart the script"))
                             else:
-                                if not http_client_pwa.headers.get('authorization'):
-                                    await self.login_pwa(http_client_pwa, tg_web_data)
-                                    await asyncio.sleep(uniform(2, 5))
                                 payload = await self.get_ton_payload(http_client_pwa)
                                 await asyncio.sleep(uniform(15, 30))
                                 if payload and await self.connect_ton_web(http_client_pwa, payload):
                                     logger.success(self.log_message(f"Successfully connected TON wallet: "
                                                                     f"<ly>{self.ton_wallet.get('wallet_address')}</ly>"))
+
+                    if settings.TWOCAPTCHA_API:
+
+                        elig = (await self.check_eligibility(http_client_pwa))
+                        elig = list(filter(lambda x: x.get('criteriaName') in AIRDROP_CRITERIAS, elig)) if len(elig) else []
+                        elig = {x.get('criteriaName'): x for x in elig}
+                        all_other_criteria_met = all(
+                            value["meetsCriteria"]
+                            for key, value in elig.items() if key not in {"completedQuestsCounter", "userReferrals"}
+                        )
+
+                        at_least_one_quest_or_referral_met = any(
+                            elig[key]["meetsCriteria"]
+                            for key in {"completedQuestsCounter", "userReferrals"}
+                        )
+
+                        result = all_other_criteria_met and at_least_one_quest_or_referral_met
+
+                        failed_criteria = []
+                        if not result:
+                            if not all_other_criteria_met:
+                                failed_criteria.append(*[
+                                    value["criteriaName"]
+                                    for key, value in elig.items()
+                                    if key not in {"completedQuestsCounter", "userReferrals"} and not value["meetsCriteria"]
+                                ])
+                            if not at_least_one_quest_or_referral_met:
+                                failed_criteria.append(*[
+                                    value["criteriaName"]
+                                    for key, value in elig.items()
+                                    if key in {"completedQuestsCounter", "userReferrals"} and not value["meetsCriteria"]
+                                ])
+                            if failed_criteria:
+                                logger.info(self.log_message("The following AirDrop criterias weren't met: " + ", ".join(failed_criteria)))
+
+                        if len(failed_criteria) == 1 and failed_criteria[0] == "activityCheck":
+                            if await self.complete_activity_check(http_client_pwa):
+                                logger.success(self.log_message('Successfully completed Activity Check (captcha)'))
+                        elif not failed_criteria:
+                            logger.success(self.log_message('Good Job. Account is eligible for AirDrop'))
 
                     logger.info(self.log_message(f"All activities for the current session have been completed"))
                     return
