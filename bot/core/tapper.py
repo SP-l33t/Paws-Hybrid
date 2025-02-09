@@ -571,13 +571,13 @@ class Tapper:
                         failed_criteria = []
                         if not result:
                             if not all_other_criteria_met:
-                                failed_criteria.append(*[
+                                failed_criteria.extend([
                                     value["criteriaName"]
                                     for key, value in elig.items()
                                     if key not in {"completedQuestsCounter", "userReferrals"} and not value["meetsCriteria"]
                                 ])
                             if not at_least_one_quest_or_referral_met:
-                                failed_criteria.append(*[
+                                failed_criteria.extend([
                                     value["criteriaName"]
                                     for key, value in elig.items()
                                     if key in {"completedQuestsCounter", "userReferrals"} and not value["meetsCriteria"]
