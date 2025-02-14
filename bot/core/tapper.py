@@ -82,6 +82,8 @@ TASKS_WL = {
     "679bc06e70efab8b96d0efdf": "Join PAWS Discord!",
     "679bcd2270efab8b96d0efe1": "Follow ARMIN",
     "67a52a71df75d42c3fff4cd7": "Follow DUDE",
+    "67ace20fb2da260fdacba414": "Follow PAWS YouTube",
+    "67ace1f8b2da260fdacba412": "Follow PAWS TikTok"
 }
 TASKS_BL = {
     "6730b42d74fd6bd0dd6904c1": "Go vote",
@@ -99,7 +101,9 @@ NO_ADDITIONAL_DATA = ["67867e662397c64561caa4f6"]
 NO_TG_SUB_NEEDED = ["6798d977ff2e2506ca57b3e8",
                     "679a306ca30cce7d9db598dc",
                     "679bc06e70efab8b96d0efdf",
-                    "67a52a71df75d42c3fff4cd7"]
+                    "67a52a71df75d42c3fff4cd7",
+                    "67ace20fb2da260fdacba414",
+                    "67ace1f8b2da260fdacba412"]
 
 AIRDROP_CRITERIAS = ["completedQuestsCounter",
                      "userReferrals",
